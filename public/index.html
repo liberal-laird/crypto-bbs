@@ -1184,6 +1184,14 @@
             // Check if MetaMask is installed
             if (!window.wallet.isMetaMaskInstalled()) {
                 console.log('MetaMask not installed');
+                // Show install message
+                const walletBtn = document.getElementById('walletBtn');
+                if (walletBtn) {
+                    walletBtn.innerHTML = '⚠️ 未安装 MetaMask';
+                    walletBtn.onclick = () => {
+                        window.open('https://metamask.io/download/', '_blank');
+                    };
+                }
                 return;
             }
 
@@ -1196,17 +1204,28 @@
 
         // Handle wallet button click
         async function handleWalletClick() {
+            if (!window.wallet.isMetaMaskInstalled()) {
+                showToast('请先安装 MetaMask 钱包', 'error');
+                window.open('https://metamask.io/download/', '_blank');
+                return;
+            }
+            
             if (walletConnected) {
                 // Show user menu or disconnect
                 openUserModal();
             } else {
                 // Connect wallet
                 try {
-                    showToast('正在连接钱包...', 'info');
+                    showToast('请在 MetaMask 中确认连接...', 'info');
                     await window.wallet.connect();
                     showToast('钱包连接成功！', 'success');
                 } catch (error) {
-                    showToast(error.message, 'error');
+                    console.error('Wallet connect error:', error);
+                    if (error.code === -32002) {
+                        showToast('MetaMask 请求已发送，请查看扩展', 'warning');
+                    } else {
+                        showToast(error.message || '连接失败，请重试', 'error');
+                    }
                 }
             }
         }
