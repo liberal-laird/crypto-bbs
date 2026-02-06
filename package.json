@@ -7,11 +7,14 @@
   "scripts": {
     "dev": "bun run api/index.js",
     "start": "bun run api/index.js",
-    "build": "echo 'Static build complete'"
+    "build": "echo 'Static build complete'",
+    "db:migrate": "bun run api/db/migrate.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "@supabase/supabase-js": "^2.39.0",
+    "pg": "^8.11.3"
   },
   "devDependencies": {
     "bun-types": "^1.0.0"
