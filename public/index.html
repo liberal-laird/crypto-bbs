@@ -1164,6 +1164,7 @@
 
     <script src="api.js"></script>
     <script src="wallet.js"></script>
+    <script src="topic-detail.js"></script>
     <script>
         let currentSection = 'all';
         let currentPage = 1;
@@ -1335,3 +1336,309 @@ init().catch(console.error);
 </script>
 </body>
 </html>
+
+// Show home (topic list)
+function showHome() {
+    document.getElementById('topicDetail').classList.remove('active');
+    document.getElementById('topicList').style.display = 'block';
+    history.pushState({}, '', window.location.pathname);
+}
+
+// Show topic detail
+async function showTopicDetail(topic) {
+    await window.topicDetail.show(topic.id);
+}
+
+// Filter by section
+async function filterBySection(section) {
+    currentSection = section;
+    currentPage = 1;
+    
+    // Update tab styles
+    document.querySelectorAll('.section-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Reload topics
+    await loadTopics();
+}
+
+// Load more topics
+async function loadMoreTopics() {
+    currentPage++;
+    try {
+        const result = await api.getTopics({ section: currentSection, page: currentPage, limit: 10 });
+        const newTopics = result.topics || [];
+        
+        if (newTopics.length > 0) {
+            const container = document.getElementById('topicsContainer');
+            newTopics.forEach(topic => {
+                container.appendChild(createTopicCard(topic));
+            });
+        }
+        
+        if (newTopics.length < 10) {
+            document.getElementById('loadMore').style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Failed to load more topics:', error);
+    }
+}
+
+// Load trending
+async function loadTrending() {
+    try {
+        const trending = await api.getTrending();
+        const container = document.getElementById('trendingList');
+        
+        if (trending.length === 0) {
+            container.innerHTML = '<div style="color: var(--text-dim); text-align: center;">暂无热门话题</div>';
+            return;
+        }
+        
+        container.innerHTML = trending.map(item => `
+            <div class="trending-item" onclick="window.topicDetail.show(${item.id})">
+                <div class="trending-number">${item.rank}</div>
+                <div class="trending-content">
+                    <div class="trending-title">${item.title}</div>
+                    <div class="trending-views">${formatNumber(item.views)} 阅读</div>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Failed to load trending:', error);
+    }
+}
+
+// Load top traders
+async function loadTopTraders() {
+    try {
+        const traders = await api.getTopTraders();
+        const container = document.getElementById('topTradersList');
+        
+        if (traders.length === 0) {
+            container.innerHTML = '<div style="color: var(--text-dim); text-align: center;">暂无交易员</div>';
+            return;
+        }
+        
+        container.innerHTML = traders.map(trader => `
+            <div class="trending-item" onclick="openUserProfile(${trader.id})">
+                <div class="avatar" style="width: 40px; height: 40px; font-size: 0.9rem;">
+                    ${trader.avatar || trader.username?.substring(0, 2) || 'U'}
+                </div>
+                <div class="trending-content">
+                    <div class="trending-title">${trader.username}</div>
+                    <div class="trending-views">收益率 ${trader.total_profit}% · 跟随者 ${formatNumber(trader.followers_count)}</div>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Failed to load top traders:', error);
+    }
+}
+
+// Open user profile modal
+async function openUserProfile(userId) {
+    currentUserId = userId;
+    
+    try {
+        const user = await api.getUser(userId);
+        
+        document.getElementById('modalAvatar').textContent = user.avatar || user.username?.substring(0, 2) || 'U';
+        document.getElementById('modalName').textContent = user.username;
+        document.getElementById('modalBio').textContent = user.bio || '暂无简介';
+        document.getElementById('modalFollowers').textContent = formatNumber(user.followers_count);
+        document.getElementById('modalProfit').textContent = (user.total_profit || 0) + '%';
+        document.getElementById('modalTopics').textContent = user.topicsCount || 0;
+        
+        document.getElementById('userModal').classList.add('active');
+        
+    } catch (error) {
+        console.error('Failed to load user:', error);
+        showToast('加载用户信息失败', 'error');
+    }
+}
+
+// Close modal
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+}
+
+// Open create topic modal
+function openCreateTopic() {
+    if (!isWalletConnected()) {
+        showToast('请先连接钱包', 'error');
+        handleWalletClick();
+        return;
+    }
+    
+    document.getElementById('createTopicModal').classList.add('active');
+}
+
+// Submit new topic
+async function submitNewTopic() {
+    const section = document.getElementById('topicSection').value;
+    const title = document.getElementById('topicTitle').value.trim();
+    const content = document.getElementById('topicContent').value.trim();
+    const tagsInput = document.getElementById('topicTags').value.trim();
+    
+    if (!title) {
+        showToast('请输入标题', 'error');
+        return;
+    }
+    
+    if (!content) {
+        showToast('请输入内容', 'error');
+        return;
+    }
+    
+    if (!isWalletConnected()) {
+        showToast('请先连接钱包', 'error');
+        await handleWalletClick();
+        return;
+    }
+    
+    try {
+        const walletAddress = getWalletAddress();
+        api.setWalletAddress(walletAddress);
+        
+        const tags = tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(t => t) : [];
+        
+        const topic = await api.createTopic({
+            section,
+            title,
+            content,
+            tags
+        });
+        
+        showToast('主题发布成功！', 'success');
+        
+        // Close modal
+        document.getElementById('createTopicModal').classList.remove('active');
+        
+        // Clear form
+        document.getElementById('topicTitle').value = '';
+        document.getElementById('topicContent').value = '';
+        document.getElementById('topicTags').value = '';
+        
+        // Reload topics
+        currentPage = 1;
+        await loadTopics();
+        
+        // Show new topic
+        window.topicDetail.show(topic.id);
+        
+    } catch (error) {
+        console.error('Failed to create topic:', error);
+        showToast(error.message || '发布失败，请重试', 'error');
+    }
+}
+
+// Submit comment
+async function submitComment() {
+    await window.topicDetail.submitComment();
+}
+
+// Like current topic
+async function likeCurrentTopic() {
+    await window.topicDetail.like();
+}
+
+// Toggle follow
+async function toggleFollow() {
+    if (!isWalletConnected()) {
+        showToast('请先连接钱包', 'error');
+        await handleWalletClick();
+        return;
+    }
+    
+    try {
+        const walletAddress = getWalletAddress();
+        api.setWalletAddress(walletAddress);
+        
+        if (isFollowing) {
+            await api.unfollowTrader(currentUserId);
+            showToast('已取消关注', 'info');
+            isFollowing = false;
+            document.getElementById('followBtn').textContent = '+ 关注';
+            document.getElementById('followBtn').className = 'btn btn-success follow-btn';
+        } else {
+            await api.followTrader(currentUserId);
+            showToast('关注成功！', 'success');
+            isFollowing = true;
+            document.getElementById('followBtn').textContent = '✓ 已关注';
+            document.getElementById('followBtn').className = 'btn btn-outline follow-btn';
+        }
+    } catch (error) {
+        console.error('Failed to toggle follow:', error);
+        showToast('操作失败，请重试', 'error');
+    }
+}
+
+// Open user modal (from header)
+function openUserModal() {
+    if (!walletAddress) {
+        showToast('请先连接钱包', 'error');
+        handleWalletClick();
+        return;
+    }
+    
+    // Show current user profile
+    openUserProfileByWallet(walletAddress);
+}
+
+// Open user profile by wallet address
+async function openUserProfileByWallet(walletAddr) {
+    try {
+        const user = await api.getUserByWallet(walletAddr);
+        openUserProfile(user.id);
+    } catch (error) {
+        console.error('Failed to get user by wallet:', error);
+        showToast('获取用户信息失败', 'error');
+    }
+}
+
+// Handle search
+function handleSearch(event) {
+    if (event.key === 'Enter') {
+        const query = event.target.value.trim();
+        if (query) {
+            searchTopics(query);
+        }
+    }
+}
+
+// Search topics
+async function searchTopics(query) {
+    try {
+        const results = await api.search(query);
+        
+        const container = document.getElementById('topicsContainer');
+        container.innerHTML = '';
+        
+        if (results.topics && results.topics.length > 0) {
+            results.topics.forEach(topic => {
+                container.appendChild(createTopicCard(topic));
+            });
+        } else {
+            container.innerHTML = `<div style="text-align: center; padding: 3rem; color: var(--text-dim);">未找到相关话题: "${query}"</div>`;
+        }
+        
+        document.getElementById('loadMore').style.display = 'none';
+        
+    } catch (error) {
+        console.error('Search failed:', error);
+    }
+}
+
+// Format number
+function formatNumber(num) {
+    if (num >= 1000000) {
+        return (num / 1000000).toFixed(1) + 'M';
+    }
+    if (num >= 1000) {
+        return (num / 1000).toFixed(1) + 'K';
+    }
+    return num?.toString() || '0';
+}
