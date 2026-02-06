@@ -1204,28 +1204,54 @@
 
         // Handle wallet button click
         async function handleWalletClick() {
-            if (!window.wallet.isMetaMaskInstalled()) {
+            console.log('🔗 handleWalletClick called');
+            console.log('  MetaMask installed:', window.wallet?.isMetaMaskInstalled());
+            console.log('  Already connected:', walletConnected);
+            
+            if (!window.wallet || !window.wallet.isMetaMaskInstalled()) {
                 showToast('请先安装 MetaMask 钱包', 'error');
-                window.open('https://metamask.io/download/', '_blank');
                 return;
             }
             
             if (walletConnected) {
-                // Show user menu or disconnect
+                console.log('  Opening user modal...');
                 openUserModal();
-            } else {
-                // Connect wallet
-                try {
-                    showToast('请在 MetaMask 中确认连接...', 'info');
-                    await window.wallet.connect();
+                return;
+            }
+            
+            // Connect wallet directly
+            try {
+                console.log('  Requesting accounts...');
+                const accounts = await window.ethereum.request({
+                    method: 'eth_requestAccounts'
+                });
+                
+                console.log('  Got accounts:', accounts);
+                
+                if (accounts.length > 0) {
+                    walletAddress = accounts[0];
+                    walletConnected = true;
+                    
+                    // Update UI
+                    updateWalletUI({
+                        isConnected: true,
+                        address: walletAddress,
+                        shortAddress: walletAddress.substring(0, 6) + '...' + walletAddress.substring(walletAddress.length - 4)
+                    });
+                    
                     showToast('钱包连接成功！', 'success');
-                } catch (error) {
-                    console.error('Wallet connect error:', error);
-                    if (error.code === -32002) {
-                        showToast('MetaMask 请求已发送，请查看扩展', 'warning');
-                    } else {
-                        showToast(error.message || '连接失败，请重试', 'error');
-                    }
+                    console.log('✅ Connected:', walletAddress);
+                } else {
+                    showToast('未找到钱包账户', 'error');
+                }
+            } catch (error) {
+                console.error('❌ Wallet error:', error);
+                if (error.code === 4001) {
+                    showToast('您拒绝了连接请求', 'warning');
+                } else if (error.code === -32002) {
+                    showToast('请求已在 MetaMask 中，请查看', 'warning');
+                } else {
+                    showToast(error.message || '连接失败', 'error');
                 }
             }
         }
