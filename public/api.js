@@ -44,6 +44,17 @@ class CryptoHubAPI {
         });
     }
 
+    async getTopicComments(topicId) {
+        return this.request(`/topics/${topicId}/comments`);
+    }
+
+    async createComment(topicId, data) {
+        return this.request(`/topics/${topicId}/comments`, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
     // Users
     async getUser(id) {
         return this.request(`/users/${id}`);
@@ -53,12 +64,50 @@ class CryptoHubAPI {
         return this.request('/top-traders');
     }
 
+    async followTrader(traderId) {
+        return this.request('/follow', {
+            method: 'POST',
+            body: JSON.stringify({ traderId })
+        });
+    }
+
+    async unfollowTrader(traderId) {
+        return this.request('/follow', {
+            method: 'DELETE',
+            body: JSON.stringify({ traderId })
+        });
+    }
+
     // Trending
     async getTrending() {
         return this.request('/trending');
+    }
+
+    // Search
+    async search(query, type = 'all') {
+        const params = new URLSearchParams({ q: query, type });
+        return this.request(`/search?${params}`);
+    }
+
+    // Likes
+    async likeTopic(topicId) {
+        return this.request(`/topics/${topicId}/like`, {
+            method: 'POST'
+        });
+    }
+
+    async unlikeTopic(topicId) {
+        return this.request(`/topics/${topicId}/like`, {
+            method: 'DELETE'
+        });
+    }
+
+    // Health check
+    async health() {
+        return this.request('/health');
     }
 }
 
 // Export for use
 window.CryptoHubAPI = CryptoHubAPI;
-console.log('📡 CryptoHub API Client 已加载');
+console.log('📡 CryptoHub API Client v2.0 已加载');

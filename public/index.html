@@ -35,7 +35,6 @@
             overflow-x: hidden;
         }
 
-        /* Animated background */
         .bg-effects {
             position: fixed;
             top: 0;
@@ -66,7 +65,6 @@
             50% { transform: scale(1.1) rotate(5deg); opacity: 1; }
         }
 
-        /* Header */
         .header {
             background: rgba(10, 10, 15, 0.8);
             backdrop-filter: blur(20px);
@@ -95,6 +93,7 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            cursor: pointer;
         }
 
         .logo-icon {
@@ -120,6 +119,7 @@
             font-weight: 500;
             transition: color 0.3s;
             position: relative;
+            cursor: pointer;
         }
 
         .nav a:hover, .nav a.active {
@@ -141,6 +141,35 @@
             display: flex;
             gap: 1rem;
             align-items: center;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            background: var(--bg-glass);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.6rem 1rem 0.6rem 2.5rem;
+            color: var(--text);
+            width: 250px;
+            transition: all 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .search-box::before {
+            content: '🔍';
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.9rem;
         }
 
         .btn {
@@ -175,7 +204,11 @@
             box-shadow: 0 6px 25px var(--primary-glow);
         }
 
-        /* Main content */
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+        }
+
         .main {
             max-width: 1400px;
             margin: 0 auto;
@@ -189,47 +222,60 @@
             .main {
                 grid-template-columns: 1fr;
             }
-            
             .sidebar {
                 display: none;
             }
         }
 
-        /* Forum sections */
-        .forum-section {
-            margin-bottom: 3rem;
-        }
-
-        .section-header {
+        .loading {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .section-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .section-title .icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
             justify-content: center;
-            font-size: 1rem;
+            align-items: center;
+            padding: 3rem;
         }
 
-        .icon-follow { background: linear-gradient(135deg, #10b981, #059669); }
-        .icon-arbitrage { background: linear-gradient(135deg, #f59e0b, #d97706); }
-        .icon-general { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
 
-        /* Topic cards */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .section-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .section-tab {
+            padding: 0.5rem 1rem;
+            background: var(--bg-glass);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .section-tab:hover {
+            border-color: var(--primary);
+            color: var(--text);
+        }
+
+        .section-tab.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-color: transparent;
+            color: white;
+        }
+
         .topic-list {
             display: flex;
             flex-direction: column;
@@ -269,6 +315,12 @@
             font-weight: 600;
             font-size: 1.1rem;
             flex-shrink: 0;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .avatar:hover {
+            transform: scale(1.1);
         }
 
         .topic-meta {
@@ -283,7 +335,16 @@
             gap: 8px;
         }
 
-        .topic-author .badge {
+        .topic-author .username {
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .topic-author .username:hover {
+            color: var(--primary);
+        }
+
+        .badge {
             padding: 2px 8px;
             border-radius: 20px;
             font-size: 0.7rem;
@@ -305,6 +366,7 @@
             font-size: 0.85rem;
             display: flex;
             gap: 1rem;
+            flex-wrap: wrap;
         }
 
         .topic-title {
@@ -312,6 +374,12 @@
             font-weight: 600;
             margin-bottom: 0.5rem;
             line-height: 1.4;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .topic-title:hover {
+            color: var(--primary);
         }
 
         .topic-preview {
@@ -330,6 +398,7 @@
         .topic-tags {
             display: flex;
             gap: 0.5rem;
+            flex-wrap: wrap;
         }
 
         .tag {
@@ -362,9 +431,18 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            cursor: pointer;
+            transition: color 0.3s;
         }
 
-        /* Sidebar */
+        .topic-stats span:hover {
+            color: var(--primary);
+        }
+
+        .topic-stats .liked {
+            color: var(--danger);
+        }
+
         .sidebar {
             display: flex;
             flex-direction: column;
@@ -439,7 +517,6 @@
             margin-top: 4px;
         }
 
-        /* Stats widget */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -468,7 +545,6 @@
             margin-top: 4px;
         }
 
-        /* Quick actions */
         .quick-actions {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -500,7 +576,288 @@
             color: var(--text-dim);
         }
 
-        /* Mobile menu */
+        .topic-detail {
+            display: none;
+        }
+
+        .topic-detail.active {
+            display: block;
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-dim);
+            cursor: pointer;
+            margin-bottom: 1.5rem;
+            transition: color 0.3s;
+        }
+
+        .back-btn:hover {
+            color: var(--text);
+        }
+
+        .detail-header {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+
+        .detail-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .detail-content {
+            line-height: 1.8;
+            font-size: 1rem;
+            color: var(--text);
+        }
+
+        .detail-content p {
+            margin-bottom: 1rem;
+        }
+
+        .comments-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        .comments-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .comment-form {
+            margin-bottom: 2rem;
+        }
+
+        .comment-form textarea {
+            width: 100%;
+            background: var(--bg-glass);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            color: var(--text);
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+            margin-bottom: 1rem;
+        }
+
+        .comment-form textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .comment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .comment-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-glass);
+            border-radius: 12px;
+        }
+
+        .comment-content {
+            flex: 1;
+        }
+
+        .comment-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .comment-username {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .comment-time {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .comment-text {
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .load-more {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .load-more button {
+            padding: 1rem 3rem;
+            background: var(--bg-glass);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .load-more button:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-close {
+            float: right;
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .user-profile-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .user-profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0 auto 1rem;
+        }
+
+        .user-profile-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .user-profile-bio {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .user-profile-stats {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        .user-profile-stat {
+            text-align: center;
+        }
+
+        .user-profile-stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .user-profile-stat-label {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .follow-btn {
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .create-topic-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            background: var(--bg-glass);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.8rem;
+            color: var(--text);
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
         .mobile-menu-btn {
             display: none;
             background: none;
@@ -514,21 +871,20 @@
             .nav, .header-actions {
                 display: none;
             }
-            
             .mobile-menu-btn {
                 display: block;
             }
-            
             .main {
                 padding: 1rem;
             }
-            
             .header-content {
                 padding: 1rem;
             }
+            .search-box {
+                display: none;
+            }
         }
 
-        /* Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -545,6 +901,45 @@
         ::-webkit-scrollbar-thumb:hover {
             background: var(--primary);
         }
+
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem 1.5rem;
+            color: var(--text);
+            backdrop-filter: blur(20px);
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success {
+            border-color: var(--success);
+        }
+
+        .toast.error {
+            border-color: var(--danger);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 <body>
@@ -552,23 +947,24 @@
 
     <header class="header">
         <div class="header-content">
-            <div class="logo">
+            <div class="logo" onclick="showHome()">
                 <div class="logo-icon">⬡</div>
                 CryptoHub
             </div>
             
             <nav class="nav">
-                <a href="#" class="active">首页</a>
-                <a href="#">跟单讨论</a>
-                <a href="#">套利讨论</a>
-                <a href="#">现货交流</a>
-                <a href="#">DeFi 策略</a>
+                <a onclick="filterBySection('all')" class="active">首页</a>
+                <a onclick="filterBySection('follow')">跟单讨论</a>
+                <a onclick="filterBySection('arbitrage')">套利讨论</a>
+                <a onclick="filterBySection('general')">现货交流</a>
             </nav>
             
             <div class="header-actions">
-                <button class="btn btn-outline">🔍 搜索</button>
-                <button class="btn btn-outline">连接钱包</button>
-                <button class="btn btn-primary">发布主题</button>
+                <div class="search-box">
+                    <input type="text" placeholder="搜索话题、用户..." id="searchInput" onkeypress="handleSearch(event)">
+                </div>
+                <button class="btn btn-outline" onclick="openUserModal()">👤</button>
+                <button class="btn btn-primary" onclick="openCreateTopic()">发布主题</button>
             </div>
             
             <button class="mobile-menu-btn">☰</button>
@@ -576,162 +972,93 @@
     </header>
 
     <main class="main">
-        <div class="content">
-            <!-- Stats -->
+        <div class="content" id="topicList">
             <div class="widget" style="margin-bottom: 2rem;">
                 <div class="stats-grid">
                     <div class="stat-item">
-                        <div class="stat-value">12,847</div>
+                        <div class="stat-value" id="statTopics">-</div>
                         <div class="stat-label">今日讨论</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value">3,256</div>
+                        <div class="stat-value" id="statOnline">-</div>
                         <div class="stat-label">在线用户</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value">89,432</div>
+                        <div class="stat-value" id="statTotal">-</div>
                         <div class="stat-label">累计主题</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value">2.4B</div>
+                        <div class="stat-value" id="statFollow">-</div>
                         <div class="stat-label">跟单金额</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Follow Trading Section -->
-            <section class="forum-section">
-                <div class="section-header">
-                    <h2 class="section-title">
-                        <span class="icon icon-follow">📈</span>
-                        跟单讨论
-                    </h2>
-                    <a href="#" style="color: var(--primary); font-size: 0.9rem; text-decoration: none;">查看更多 →</a>
+            <div class="section-tabs">
+                <button class="section-tab active" onclick="filterBySection('all')">全部</button>
+                <button class="section-tab" onclick="filterBySection('follow')">跟单</button>
+                <button class="section-tab" onclick="filterBySection('arbitrage')">套利</button>
+                <button class="section-tab" onclick="filterBySection('general')">现货</button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+            </div>
+
+            <div class="topic-list" id="topicsContainer"></div>
+
+            <div class="load-more" id="loadMore" style="display: none;">
+                <button onclick="loadMoreTopics()">加载更多</button>
+            </div>
+        </div>
+
+        <div class="content topic-detail" id="topicDetail">
+            <div class="back-btn" onclick="showHome()">
+                ← 返回列表
+            </div>
+
+            <div class="detail-header">
+                <h1 class="detail-title" id="detailTitle"></h1>
+                <div class="detail-meta">
+                    <div class="avatar" id="detailAvatar"></div>
+                    <div>
+                        <div class="topic-author">
+                            <span class="username" id="detailAuthor" onclick="openUserProfile()"></span>
+                            <span class="badge" id="detailBadge"></span>
+                        </div>
+                        <div class="topic-info">
+                            <span id="detailTime"></span>
+                            <span id="detailSection"></span>
+                        </div>
+                    </div>
                 </div>
+                <div class="detail-content" id="detailContent"></div>
+                <div class="topic-footer" style="margin-top: 1.5rem;">
+                    <div class="topic-tags" id="detailTags"></div>
+                    <div class="topic-stats">
+                        <span onclick="likeCurrentTopic()" id="likeBtn">❤️ <span id="likeCount">0</span></span>
+                        <span>💬 <span id="commentCount">0</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="comments-section">
+                <h3 class="comments-title">💬 评论 <span id="commentsCount">0</span></h3>
                 
-                <div class="topic-list">
-                    <article class="topic-card">
-                        <div class="topic-header">
-                            <div class="avatar">T</div>
-                            <div class="topic-meta">
-                                <div class="topic-author">
-                                    TraderZhang
-                                    <span class="badge badge-vip">VIP</span>
-                                </div>
-                                <div class="topic-info">2小时前 · 收益率 156%</div>
-                            </div>
-                        </div>
-                        <h3 class="topic-title">BTC 现货分批建仓策略，分享实盘信号</h3>
-                        <p class="topic-preview">目前行情处于相对低位，建议分批布局现货，支撑位 95k-98k 可以逐步买入...</p>
-                        <div class="topic-footer">
-                            <div class="topic-tags">
-                                <span class="tag tag-hot">🔥 热门</span>
-                                <span class="tag">BTC</span>
-                                <span class="tag">现货</span>
-                            </div>
-                            <div class="topic-stats">
-                                <span>💬 328</span>
-                                <span>👍 1.2K</span>
-                            </div>
-                        </div>
-                    </article>
-
-                    <article class="topic-card">
-                        <div class="topic-header">
-                            <div class="avatar" style="background: linear-gradient(135deg, #10b981, #059669);">S</div>
-                            <div class="topic-meta">
-                                <div class="topic-author">
-                                    SolStrategy
-                                    <span class="badge badge-expert">专家</span>
-                                </div>
-                                <div class="topic-info">4小时前 · 收益率 89%</div>
-                            </div>
-                        </div>
-                        <h3 class="topic-title">SOL 链上巨鲸地址异动，多单信号确认</h3>
-                        <p class="topic-preview">监测到 SOL 链上某巨鲸地址近24小时持续增持，链上数据显示大单持续买入...</p>
-                        <div class="topic-footer">
-                            <div class="topic-tags">
-                                <span class="tag">SOL</span>
-                                <span class="tag">链上数据</span>
-                            </div>
-                            <div class="topic-stats">
-                                <span>💬 156</span>
-                                <span>👍 567</span>
-                            </div>
-                        </div>
-                    </article>
+                <div class="comment-form">
+                    <textarea id="commentInput" placeholder="写下你的评论..."></textarea>
+                    <button class="btn btn-primary" onclick="submitComment()">发布评论</button>
                 </div>
-            </section>
 
-            <!-- Arbitrage Section -->
-            <section class="forum-section">
-                <div class="section-header">
-                    <h2 class="section-title">
-                        <span class="icon icon-arbitrage">⚡</span>
-                        套利讨论
-                    </h2>
-                    <a href="#" style="color: var(--primary); font-size: 0.9rem; text-decoration: none;">查看更多 →</a>
-                </div>
-                
-                <div class="topic-list">
-                    <article class="topic-card">
-                        <div class="topic-header">
-                            <div class="avatar" style="background: linear-gradient(135deg, #f59e0b, #d97706);">A</div>
-                            <div class="topic-meta">
-                                <div class="topic-author">
-                                    ArbitrageKing
-                                </div>
-                                <div class="topic-info">1小时前 · 年化 24.5%</div>
-                            </div>
-                        </div>
-                        <h3 class="topic-title">BTC 期现套利机会分析 - CBOE vs Binance 价差</h3>
-                        <p class="topic-preview">当前 CBOE 期货价格比 Binance 现货高 2.3%，考虑资金成本后年化收益约 15-20%...</p>
-                        <div class="topic-footer">
-                            <div class="topic-tags">
-                                <span class="tag tag-hot">🔥 热门</span>
-                                <span class="tag tag-new">✨ 新策略</span>
-                                <span class="tag">BTC</span>
-                            </div>
-                            <div class="topic-stats">
-                                <span>💬 89</span>
-                                <span>👍 312</span>
-                            </div>
-                        </div>
-                    </article>
-
-                    <article class="topic-card">
-                        <div class="topic-header">
-                            <div class="avatar" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">D</div>
-                            <div class="topic-meta">
-                                <div class="topic-author">
-                                    DeFiHunter
-                                </div>
-                                <div class="topic-info">6小时前 · 年化 45%</div>
-                            </div>
-                        </div>
-                        <h3 class="topic-title">Curve / Aave 循环贷套利实盘记录</h3>
-                        <p class="topic-preview">利用 CRV 质押收益 + 借贷利差进行循环操作，单日收益 0.15%...</p>
-                        <div class="topic-footer">
-                            <div class="topic-tags">
-                                <span class="tag">DeFi</span>
-                                <span class="tag">套利</span>
-                            </div>
-                            <div class="topic-stats">
-                                <span>💬 234</span>
-                                <span>👍 876</span>
-                            </div>
-                        </div>
-                    </article>
-                </div>
-            </section>
+                <div class="comment-list" id="commentList"></div>
+            </div>
         </div>
 
         <aside class="sidebar">
-            <!-- Quick Actions -->
             <div class="widget">
                 <h3 class="widget-title">🚀 快捷操作</h3>
                 <div class="quick-actions">
-                    <div class="action-btn">
+                    <div class="action-btn" onclick="openCreateTopic()">
                         <div class="icon">📝</div>
                         <span>发布主题</span>
                     </div>
@@ -750,115 +1077,144 @@
                 </div>
             </div>
 
-            <!-- Trending -->
             <div class="widget">
                 <h3 class="widget-title">🔥 热门话题</h3>
-                <div class="trending-list">
-                    <div class="trending-item">
-                        <div class="trending-number">1</div>
-                        <div class="trending-content">
-                            <div class="trending-title">美联储降息预期对比特币影响</div>
-                            <div class="trending-views">12.5K 阅读</div>
-                        </div>
-                    </div>
-                    <div class="trending-item">
-                        <div class="trending-number">2</div>
-                        <div class="trending-content">
-                            <div class="trending-title">SOL 生态即将爆发的 5 个项目</div>
-                            <div class="trending-views">8.3K 阅读</div>
-                        </div>
-                    </div>
-                    <div class="trending-item">
-                        <div class="trending-number">3</div>
-                        <div class="trending-content">
-                            <div class="trending-title">杠杆合约爆仓教训总结</div>
-                            <div class="trending-views">6.1K 阅读</div>
-                        </div>
-                    </div>
-                    <div class="trending-item">
-                        <div class="trending-number">4</div>
-                        <div class="trending-content">
-                            <div class="trending-title">如何科学设置止损止盈</div>
-                            <div class="trending-views">5.8K 阅读</div>
-                        </div>
-                    </div>
-                    <div class="trending-item">
-                        <div class="trending-number">5</div>
-                        <div class="trending-content">
-                            <div class="trending-title">ETH ETF 通过后市场分析</div>
-                            <div class="trending-views">4.2K 阅读</div>
-                        </div>
-                    </div>
-                </div>
+                <div class="trending-list" id="trendingList"></div>
             </div>
 
-            <!-- Top Traders -->
             <div class="widget">
                 <h3 class="widget-title">👑 顶级交易员</h3>
-                <div class="trending-list">
-                    <div class="trending-item">
-                        <div class="avatar" style="width: 40px; height: 40px; font-size: 0.9rem;">W</div>
-                        <div class="trending-content">
-                            <div class="trending-title">WhaleHunter</div>
-                            <div class="trending-views">收益率 234% · 跟随者 1.2K</div>
-                        </div>
-                    </div>
-                    <div class="trending-item">
-                        <div class="avatar" style="width: 40px; height: 40px; font-size: 0.9rem; background: linear-gradient(135deg, #f59e0b, #d97706);">B</div>
-                        <div class="trending-content">
-                            <div class="trending-title">BullMarket</div>
-                            <div class="trending-views">收益率 189% · 跟随者 892</div>
-                        </div>
-                    </div>
-                    <div class="trending-item">
-                        <div class="avatar" style="width: 40px; height: 40px; font-size: 0.9rem; background: linear-gradient(135deg, #10b981, #059669);">D</div>
-                        <div class="trending-content">
-                            <div class="trending-title">DefiMaster</div>
-                            <div class="trending-views">收益率 156% · 跟随者 567</div>
-                        </div>
-                    </div>
-                </div>
+                <div class="trending-list" id="topTradersList"></div>
             </div>
         </aside>
     </main>
 
+    <div class="modal-overlay" id="userModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('userModal')">×</button>
+            <div class="user-profile-header">
+                <div class="user-profile-avatar" id="modalAvatar"></div>
+                <div class="user-profile-name" id="modalName"></div>
+                <div class="user-profile-bio" id="modalBio"></div>
+                <div class="topic-tags" id="modalTags"></div>
+                <div class="user-profile-stats">
+                    <div class="user-profile-stat">
+                        <div class="user-profile-stat-value" id="modalFollowers">0</div>
+                        <div class="user-profile-stat-label">跟随者</div>
+                    </div>
+                    <div class="user-profile-stat">
+                        <div class="user-profile-stat-value" id="modalProfit">0%</div>
+                        <div class="user-profile-stat-label">收益率</div>
+                    </div>
+                    <div class="user-profile-stat">
+                        <div class="user-profile-stat-value" id="modalTopics">0</div>
+                        <div class="user-profile-stat-label">主题数</div>
+                    </div>
+                </div>
+                <button class="btn btn-success follow-btn" id="followBtn" onclick="toggleFollow()">+ 关注</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="createTopicModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('createTopicModal')">×</button>
+            <h2 style="margin-bottom: 1.5rem;">📝 发布新主题</h2>
+            <div class="create-topic-form">
+                <div class="form-group">
+                    <label>板块</label>
+                    <select id="topicSection">
+                        <option value="follow">跟单讨论</option>
+                        <option value="arbitrage">套利讨论</option>
+                        <option value="general">现货交流</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>标题</label>
+                    <input type="text" id="topicTitle" placeholder="简洁描述你的话题...">
+                </div>
+                <div class="form-group">
+                    <label>内容</label>
+                    <textarea id="topicContent" rows="6" placeholder="详细描述你的观点..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>标签 (逗号分隔)</label>
+                    <input type="text" id="topicTags" placeholder="BTC, 套利, 现货">
+                </div>
+                <button class="btn btn-primary" onclick="submitNewTopic()">发布主题</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="api.js"></script>
     <script>
-        // Web3 Wallet connection simulation
-        document.querySelector('.btn-outline').addEventListener('click', function() {
-            alert('🔗 钱包连接功能\n\n点击连接 MetaMask、WalletConnect 等钱包');
-        });
+        let currentSection = 'all';
+        let currentPage = 1;
+        let currentTopicId = null;
+        let currentUserId = null;
+        let topics = [];
+        let isFollowing = false;
 
-        // Quick action buttons
-        document.querySelectorAll('.action-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const action = this.querySelector('span').textContent;
-                alert(`🚀 ${action}\n\n即将打开 ${action} 页面`);
-            });
-        });
+        const api = new CryptoHubAPI();
 
-        // Topic card click
-        document.querySelectorAll('.topic-card').forEach(card => {
-            card.addEventListener('click', function() {
-                const title = this.querySelector('.topic-title').textContent;
-                alert(`📄 打开帖子: ${title}`);
-            });
-        });
+        async function init() {
+            await loadStats();
+            await loadTopics();
+            await loadTrending();
+            await loadTopTraders();
+        }
 
-        // Trending item click
-        document.querySelectorAll('.trending-item').forEach(item => {
-            item.addEventListener('click', function() {
-                const title = this.querySelector('.trending-title').textContent;
-                alert(`🔥 打开热门话题: ${title}`);
-            });
-        });
+        async function loadStats() {
+            try {
+                const stats = await api.getStats();
+                document.getElementById('statTopics').textContent = formatNumber(stats.todayDiscussions);
+                document.getElementById('statOnline').textContent = formatNumber(stats.onlineUsers);
+                document.getElementById('statTotal').textContent = formatNumber(stats.totalTopics);
+                document.getElementById('statFollow').textContent = stats.followAmount;
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+                document.getElementById('statTopics').textContent = '12K+';
+                document.getElementById('statOnline').textContent = '3K+';
+                document.getElementById('statTotal').textContent = '89K+';
+                document.getElementById('statFollow').textContent = '2.4B';
+            }
+        }
 
-        // Mobile menu
-        document.querySelector('.mobile-menu-btn').addEventListener('click', function() {
-            alert('📱 移动端菜单\n\n移动端导航将在此展开');
-        });
+        async function loadTopics() {
+            const container = document.getElementById('topicsContainer');
+            container.innerHTML = '';
+            
+            document.getElementById('loading').style.display = 'flex';
+            document.getElementById('loadMore').style.display = 'none';
 
-        console.log('🚀 CryptoHub BBS 已加载');
-        console.log('Web3 风格界面设计完成');
-    </script>
-</body>
-</html>
+            try {
+                const result = await api.getTopics({ section: currentSection, page: currentPage, limit: 10 });
+                topics = result.topics || [];
+                
+                if (topics.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-dim);">暂无话题，快来发布第一个吧！</div>';
+                } else {
+                    topics.forEach(topic => container.appendChild(createTopicCard(topic)));
+                }
+                
+                if (topics.length === 10) {
+                    document.getElementById('loadMore').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Failed to load topics:', error);
+                container.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-dim);">加载失败，请刷新重试</div>';
+            }
+
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function createTopicCard(topic) {
+            const card = document.createElement('article');
+            card.className = 'topic-card';
+            card.onclick = () => showTopicDetail(topic);
+            
+            const tags = Array.isArray(topic.tags) ? topic.tags : [];
+            const tagsHtml = tags.map(tag => {
+                const
