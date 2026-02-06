@@ -1,4 +1,4 @@
-// CryptoHub Wallet Connection Module
+// CryptoHub Wallet Connection Module (Fixed for ethers v6)
 class WalletConnector {
     constructor() {
         this.provider = null;
@@ -14,14 +14,8 @@ class WalletConnector {
         return typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask;
     }
 
-    // Get short address for display
+    // Get short address
     getShortAddress(address) {
-        if (!address) return '';
-        return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
-    }
-
-    // Format address for display
-    formatAddress(address) {
         if (!address) return '';
         return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
     }
@@ -29,25 +23,28 @@ class WalletConnector {
     // Connect to wallet
     async connect() {
         if (!this.isMetaMaskInstalled()) {
-            throw new Error('MetaMask is not installed. Please install MetaMask to use this feature.');
+            throw new Error('MetaMask is not installed. Please install MetaMask first.');
         }
 
         try {
-            // Request account access
-            const accounts = await window.ethereum.request({
-                method: 'eth_requestAccounts'
+            // Request accounts
+            const accounts = await window.ethereum.request({ 
+                method: 'eth_requestAccounts' 
             });
+
+            if (accounts.length === 0) {
+                throw new Error('No accounts found. Please unlock MetaMask.');
+            }
 
             this.address = accounts[0];
             this.isConnected = true;
 
-            // Create provider and signer
-            this.provider = new ethers.BrowserProvider(window.ethereum);
-            this.signer = await this.provider.getSigner();
-
+            // Create provider for read operations
+            this.provider = null;
+            
             // Get chain ID
-            this.chainId = await window.ethereum.request({
-                method: 'eth_chainId'
+            this.chainId = await window.ethereum.request({ 
+                method: 'eth_chainId' 
             });
 
             // Listen for account changes
@@ -63,7 +60,7 @@ class WalletConnector {
             // Listen for chain changes
             window.ethereum.on('chainChanged', (chainId) => {
                 this.chainId = chainId;
-                this.notifyListeners();
+                window.location.reload(); // Reload on chain change
             });
 
             this.notifyListeners();
@@ -79,7 +76,7 @@ class WalletConnector {
         }
     }
 
-    // Disconnect wallet
+    // Disconnect
     disconnect() {
         this.address = null;
         this.signer = null;
@@ -90,25 +87,36 @@ class WalletConnector {
         console.log('Wallet disconnected');
     }
 
-    // Sign message
+    // Sign message (optional)
     async signMessage(message) {
-        if (!this.signer) {
-            throw new Error('Wallet not connected');
+        try {
+            if (!this.address) {
+                throw new Error('Wallet not connected');
+            }
+            
+            const signedMessage = await window.ethereum.request({
+                method: 'personal_sign',
+                params: [message, this.address]
+            });
+            
+            return signedMessage;
+        } catch (error) {
+            console.error('Sign message failed:', error);
+            throw error;
         }
-        return await this.signer.signMessage(message);
     }
 
-    // Get current address
+    // Get address
     getAddress() {
         return this.address;
     }
 
-    // Check if connected
+    // Check connection
     isWalletConnected() {
         return this.isConnected;
     }
 
-    // Get network name from chain ID
+    // Get network name
     getNetworkName(chainId) {
         const networks = {
             '0x1': 'Ethereum',
@@ -117,55 +125,57 @@ class WalletConnector {
             '0x89': 'Polygon',
             '0xa': 'Optimism',
             '0x2105': 'Base',
-            '0xfa': 'Fantom'
+            '0xfa': 'Fantom',
+            '0x8274f': 'Scroll'
         };
         return networks[chainId] || 'Unknown Network';
     }
 
-    // Add event listener
+    // Add listener
     addListener(callback) {
         this.listeners.push(callback);
     }
 
-    // Remove event listener
+    // Remove listener
     removeListener(callback) {
         this.listeners = this.listeners.filter(cb => cb !== callback);
     }
 
-    // Notify all listeners
+    // Notify listeners
     notifyListeners() {
+        const state = {
+            isConnected: this.isConnected,
+            address: this.address,
+            shortAddress: this.getShortAddress(this.address),
+            chainId: this.chainId,
+            network: this.getNetworkName(this.chainId)
+        };
+        
         this.listeners.forEach(callback => {
             try {
-                callback({
-                    isConnected: this.isConnected,
-                    address: this.address,
-                    shortAddress: this.getShortAddress(this.address),
-                    chainId: this.chainId,
-                    network: this.getNetworkName(this.chainId)
-                });
+                callback(state);
             } catch (error) {
                 console.error('Listener error:', error);
             }
         });
     }
 
-    // Auto-connect on page load
+    // Auto-connect
     async autoConnect() {
         if (!this.isMetaMaskInstalled()) {
             return null;
         }
 
         try {
-            const accounts = await window.ethereum.request({
-                method: 'eth_accounts'
+            const accounts = await window.ethereum.request({ 
+                method: 'eth_accounts' 
             });
 
             if (accounts.length > 0) {
                 this.address = accounts[0];
                 this.isConnected = true;
-                this.provider = new ethers.BrowserProvider(window.ethereum);
-                this.chainId = await window.ethereum.request({
-                    method: 'eth_chainId'
+                this.chainId = await window.ethereum.request({ 
+                    method: 'eth_chainId' 
                 });
                 this.notifyListeners();
                 return {
@@ -182,4 +192,4 @@ class WalletConnector {
 
 // Create global instance
 window.wallet = new WalletConnector();
-console.log('🔗 Wallet connector initialized');
+console.log('🔗 Wallet connector initialized (v2)');
