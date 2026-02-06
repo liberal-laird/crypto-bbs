@@ -978,6 +978,7 @@
                         <span id="userAddress"></span>
                     </button>
                     <button class="btn btn-primary" onclick="openCreateTopic()">发布主题</button>
+                    <button class="btn btn-outline" onclick="disconnectWallet()">断开</button>
                 </div>
             </div>
             
@@ -1164,6 +1165,7 @@
 
     <script src="api.js"></script>
     <script src="wallet.js"></script>
+    <script src="web3auth.js"></script>
     <script src="topic-detail.js"></script>
     <script>
         let currentSection = 'all';
@@ -1178,16 +1180,41 @@
         // Wallet connection state
         let walletConnected = false;
         let walletAddress = null;
+        let walletType = null; // 'metamask' or 'web3auth'
 
-        // Initialize wallet
+        // Initialize Web3Auth
         async function initWallet() {
-            // Check if MetaMask is installed
+            try {
+                // Initialize Web3Auth (replace with your Client ID)
+                await window.web3auth.init('YOUR_WEB3AUTH_CLIENT_ID');
+                
+                // Listen for Web3Auth state changes
+                window.web3auth.addListener(updateWalletUI);
+                
+                // Check if already connected
+                if (window.web3auth.isConnected()) {
+                    walletAddress = await window.web3auth.getAddress();
+                    walletConnected = true;
+                    updateWalletUI({
+                        connected: true,
+                        address: walletAddress,
+                        shortAddress: window.web3auth.shortenAddress(walletAddress)
+                    });
+                }
+            } catch (error) {
+                console.log('Web3Auth init failed, falling back to MetaMask:', error);
+                // Fall back to MetaMask
+                await initMetaMask();
+            }
+        }
+
+        // Initialize MetaMask as fallback
+        async function initMetaMask() {
             if (!window.wallet.isMetaMaskInstalled()) {
                 console.log('MetaMask not installed');
-                // Show install message
                 const walletBtn = document.getElementById('walletBtn');
                 if (walletBtn) {
-                    walletBtn.innerHTML = '⚠️ 未安装 MetaMask';
+                    walletBtn.innerHTML = '⚠️ 未安装钱包';
                     walletBtn.onclick = () => {
                         window.open('https://metamask.io/download/', '_blank');
                     };
@@ -1195,72 +1222,78 @@
                 return;
             }
 
-            // Listen for wallet changes
             window.wallet.addListener(updateWalletUI);
-
-            // Try auto-connect
             await window.wallet.autoConnect();
         }
 
-        // Handle wallet button click
+        // Connect wallet (opens Web3Auth modal)
         async function handleWalletClick() {
-            console.log('🔗 handleWalletClick called');
-            console.log('  MetaMask installed:', window.wallet?.isMetaMaskInstalled());
-            console.log('  Already connected:', walletConnected);
-            
-            if (!window.wallet || !window.wallet.isMetaMaskInstalled()) {
-                showToast('请先安装 MetaMask 钱包', 'error');
-                return;
-            }
-            
             if (walletConnected) {
-                console.log('  Opening user modal...');
                 openUserModal();
                 return;
             }
             
-            // Connect wallet directly
             try {
-                console.log('  Requesting accounts...');
-                const accounts = await window.ethereum.request({
-                    method: 'eth_requestAccounts'
+                showToast('正在连接钱包...', 'info');
+                
+                if (window.web3auth.web3auth) {
+                    // Use Web3Auth
+                    await window.web3auth.connect();
+                    walletAddress = await window.web3auth.getAddress();
+                    walletConnected = true;
+                    walletType = 'web3auth';
+                    showToast('钱包连接成功！', 'success');
+                } else {
+                    // Fall back to MetaMask
+                    await window.wallet.connect();
+                    walletAddress = window.wallet.getAddress();
+                    walletConnected = true;
+                    walletType = 'metamask';
+                    showToast('钱包连接成功！', 'success');
+                }
+                
+                updateWalletUI({
+                    connected: true,
+                    address: walletAddress,
+                    shortAddress: walletAddress?.substring(0, 6) + '...' + walletAddress?.substring(walletAddress.length - 4)
                 });
                 
-                console.log('  Got accounts:', accounts);
-                
-                if (accounts.length > 0) {
-                    walletAddress = accounts[0];
-                    walletConnected = true;
-                    
-                    // Update UI
-                    updateWalletUI({
-                        isConnected: true,
-                        address: walletAddress,
-                        shortAddress: walletAddress.substring(0, 6) + '...' + walletAddress.substring(walletAddress.length - 4)
-                    });
-                    
-                    showToast('钱包连接成功！', 'success');
-                    console.log('✅ Connected:', walletAddress);
-                } else {
-                    showToast('未找到钱包账户', 'error');
-                }
             } catch (error) {
-                console.error('❌ Wallet error:', error);
-                if (error.code === 4001) {
-                    showToast('您拒绝了连接请求', 'warning');
-                } else if (error.code === -32002) {
-                    showToast('请求已在 MetaMask 中，请查看', 'warning');
-                } else {
-                    showToast(error.message || '连接失败', 'error');
+                console.error('Wallet connect error:', error);
+                showToast(error.message || '连接失败，请重试', 'error');
+            }
+        }
+
+        // Disconnect wallet
+        async function disconnectWallet() {
+            try {
+                if (walletType === 'web3auth' && window.web3auth.isConnected()) {
+                    await window.web3auth.disconnect();
+                } else if (walletType === 'metamask') {
+                    window.wallet.disconnect();
                 }
+                
+                walletConnected = false;
+                walletAddress = null;
+                walletType = null;
+                
+                updateWalletUI({
+                    connected: false,
+                    address: null,
+                    shortAddress: ''
+                });
+                
+                showToast('已断开钱包连接', 'info');
+            } catch (error) {
+                console.error('Disconnect error:', error);
             }
         }
 
         // Update wallet UI
         function updateWalletUI(state) {
-            walletConnected = state.isConnected;
+            walletConnected = state.connected;
             walletAddress = state.address;
-
+            
             const walletContainer = document.getElementById('walletContainer');
             const userMenu = document.getElementById('userMenu');
             const walletBtn = document.getElementById('walletBtn');
@@ -1268,7 +1301,7 @@
             const walletIcon = document.getElementById('walletIcon');
             const userAddress = document.getElementById('userAddress');
 
-            if (walletConnected) {
+            if (walletConnected && walletAddress) {
                 // Show connected state
                 walletContainer.style.display = 'none';
                 userMenu.style.display = 'flex';
