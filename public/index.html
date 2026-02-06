@@ -963,8 +963,22 @@
                 <div class="search-box">
                     <input type="text" placeholder="搜索话题、用户..." id="searchInput" onkeypress="handleSearch(event)">
                 </div>
-                <button class="btn btn-outline" onclick="openUserModal()">👤</button>
-                <button class="btn btn-primary" onclick="openCreateTopic()">发布主题</button>
+                
+                <!-- Wallet Button -->
+                <div id="walletContainer">
+                    <button class="btn btn-outline" id="walletBtn" onclick="handleWalletClick()">
+                        <span id="walletIcon">🔗</span>
+                        <span id="walletText">连接钱包</span>
+                    </button>
+                </div>
+                
+                <!-- User Menu (shown when connected) -->
+                <div id="userMenu" style="display: none;">
+                    <button class="btn btn-outline" onclick="openUserModal()">
+                        <span id="userAddress"></span>
+                    </button>
+                    <button class="btn btn-primary" onclick="openCreateTopic()">发布主题</button>
+                </div>
             </div>
             
             <button class="mobile-menu-btn">☰</button>
@@ -1149,6 +1163,7 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <script src="api.js"></script>
+    <script src="wallet.js"></script>
     <script>
         let currentSection = 'all';
         let currentPage = 1;
@@ -1159,7 +1174,103 @@
 
         const api = new CryptoHubAPI();
 
+        // Wallet connection state
+        let walletConnected = false;
+        let walletAddress = null;
+
+        // Initialize wallet
+        async function initWallet() {
+            // Check if MetaMask is installed
+            if (!window.wallet.isMetaMaskInstalled()) {
+                console.log('MetaMask not installed');
+                return;
+            }
+
+            // Listen for wallet changes
+            window.wallet.addListener(updateWalletUI);
+
+            // Try auto-connect
+            await window.wallet.autoConnect();
+        }
+
+        // Handle wallet button click
+        async function handleWalletClick() {
+            if (walletConnected) {
+                // Show user menu or disconnect
+                openUserModal();
+            } else {
+                // Connect wallet
+                try {
+                    showToast('正在连接钱包...', 'info');
+                    await window.wallet.connect();
+                    showToast('钱包连接成功！', 'success');
+                } catch (error) {
+                    showToast(error.message, 'error');
+                }
+            }
+        }
+
+        // Update wallet UI
+        function updateWalletUI(state) {
+            walletConnected = state.isConnected;
+            walletAddress = state.address;
+
+            const walletContainer = document.getElementById('walletContainer');
+            const userMenu = document.getElementById('userMenu');
+            const walletBtn = document.getElementById('walletBtn');
+            const walletText = document.getElementById('walletText');
+            const walletIcon = document.getElementById('walletIcon');
+            const userAddress = document.getElementById('userAddress');
+
+            if (walletConnected) {
+                // Show connected state
+                walletContainer.style.display = 'none';
+                userMenu.style.display = 'flex';
+                userAddress.textContent = state.shortAddress;
+                userAddress.style.color = 'var(--success)';
+                
+                // Update wallet indicator
+                walletText.textContent = '已连接';
+                walletIcon.textContent = '✓';
+            } else {
+                // Show disconnected state
+                walletContainer.style.display = 'block';
+                userMenu.style.display = 'none';
+                walletText.textContent = '连接钱包';
+                walletIcon.textContent = '🔗';
+            }
+        }
+
+        // Get wallet address for API calls
+        function getWalletAddress() {
+            return walletAddress;
+        }
+
+        // Check if wallet is connected
+        function isWalletConnected() {
+            return walletConnected;
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Initialize app
         async function init() {
+            // Initialize wallet first
+            await initWallet();
+            
+            // Load other data
             await loadStats();
             await loadTopics();
             await loadTrending();
@@ -1218,3 +1329,9 @@
             const tags = Array.isArray(topic.tags) ? topic.tags : [];
             const tagsHtml = tags.map(tag => {
                 const
+
+// Start app
+init().catch(console.error);
+</script>
+</body>
+</html>
