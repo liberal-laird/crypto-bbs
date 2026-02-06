@@ -11,7 +11,8 @@ export const supabase = createClient(
 
 // PostgreSQL pool for direct queries
 export const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL
+  connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 // Helper to run queries

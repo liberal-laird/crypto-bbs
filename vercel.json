@@ -1,7 +1,7 @@
 {
-  "buildCommand": "bun install",
-  "outputDirectory": "public",
-  "installCommand": "bun install",
+  "buildCommand": "echo 'Static build complete'",
+  "outputDirectory": ".",
+  "installCommand": "npm install",
   "rewrites": [
     {
       "source": "/api/(.*)",
