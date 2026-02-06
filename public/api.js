@@ -1,25 +1,51 @@
-// CryptoHub BBS API Client
-const API_BASE = '/api';
-
+// API client with wallet authentication
 class CryptoHubAPI {
     constructor(baseUrl = API_BASE) {
         this.baseUrl = baseUrl;
+        this.walletAddress = null;
+    }
+
+    // Set wallet address for authentication
+    setWalletAddress(address) {
+        this.walletAddress = address;
     }
 
     async request(endpoint, options = {}) {
+        const headers = {
+            'Content-Type': 'application/json',
+            ...options.headers
+        };
+
+        // Add wallet address header if connected
+        if (this.walletAddress) {
+            headers['X-Wallet-Address'] = this.walletAddress;
+        }
+
         const response = await fetch(`${this.baseUrl}${endpoint}`, {
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers
-            },
+            headers,
             ...options
         });
 
         if (!response.ok) {
-            throw new Error(`API Error: ${response.status}`);
+            const error = await response.json().catch(() => ({ message: 'Request failed' }));
+            throw new Error(error.message || `API Error: ${response.status}`);
         }
 
         return response.json();
+    }
+
+    // Auth - Register/Login with wallet
+    async authWithWallet(walletAddress, signature = null) {
+        const data = await this.request('/auth/wallet', {
+            method: 'POST',
+            body: JSON.stringify({ walletAddress, signature })
+        });
+        
+        if (data.token) {
+            localStorage.setItem('authToken', data.token);
+        }
+        
+        return data;
     }
 
     // Stats
@@ -58,6 +84,10 @@ class CryptoHubAPI {
     // Users
     async getUser(id) {
         return this.request(`/users/${id}`);
+    }
+
+    async getUserByWallet(walletAddress) {
+        return this.request(`/users/wallet/${walletAddress}`);
     }
 
     async getTopTraders() {
@@ -108,6 +138,6 @@ class CryptoHubAPI {
     }
 }
 
-// Export for use
+// Export
 window.CryptoHubAPI = CryptoHubAPI;
-console.log('📡 CryptoHub API Client v2.0 已加载');
+console.log('📡 CryptoHub API Client v3.0 已加载 (支持钱包认证)');

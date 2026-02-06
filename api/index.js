@@ -14,13 +14,74 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Wallet auth middleware
+app.use((req, res, next) => {
+  req.walletAddress = req.headers['x-wallet-address'] || null;
+  next();
+});
+
 // Health check
 app.get('/api/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');
-    res.json({ status: 'ok', database: 'connected', timestamp: new Date().toISOString() });
+    res.json({ status: 'ok', database: 'connected', wallet: !!req.walletAddress, timestamp: new Date().toISOString() });
   } catch (error) {
     res.json({ status: 'ok', database: 'disconnected', timestamp: new Date().toISOString() });
+  }
+});
+
+// Auth with wallet
+app.post('/api/auth/wallet', async (req, res) => {
+  try {
+    const { walletAddress, signature } = req.body;
+    
+    if (!walletAddress) {
+      return res.status(400).json({ error: 'Wallet address required' });
+    }
+
+    // Check if user exists
+    const existingUser = await query(
+      'SELECT * FROM users WHERE wallet_address = $1',
+      [walletAddress.toLowerCase()]
+    );
+
+    let user;
+    let isNew = false;
+
+    if (existingUser.rows.length > 0) {
+      user = existingUser.rows[0];
+    } else {
+      // Create new user with wallet address
+      const username = `User_${walletAddress.substring(0, 6)}`;
+      const avatar = walletAddress.substring(2, 8).toUpperCase();
+      
+      const newUser = await query(
+        `INSERT INTO users (username, avatar, wallet_address, role, bio) 
+         VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        [username, avatar, walletAddress.toLowerCase(), 'user', '加密货币爱好者']
+      );
+      
+      user = newUser.rows[0];
+      isNew = true;
+    }
+
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        avatar: user.avatar,
+        role: user.role,
+        wallet_address: user.wallet_address,
+        bio: user.bio,
+        followers_count: user.followers_count,
+        total_profit: user.total_profit
+      },
+      isNew
+    });
+  } catch (error) {
+    console.error('Auth error:', error);
+    res.status(500).json({ error: 'Authentication failed' });
   }
 });
 
@@ -29,7 +90,6 @@ app.get('/api/stats', async (req, res) => {
   try {
     const topicsCount = await query('SELECT COUNT(*) FROM topics');
     const usersCount = await query('SELECT COUNT(*) FROM users');
-    const commentsCount = await query('SELECT COUNT(*) FROM comments');
     
     res.json({
       todayDiscussions: parseInt(topicsCount.rows[0].count) || 0,
@@ -49,7 +109,7 @@ app.get('/api/topics', async (req, res) => {
     const { section = 'all', page = 1, limit = 10 } = req.query;
     const offset = (page - 1) * limit;
     
-    let sql = 'SELECT t.*, u.username, u.avatar, u.role FROM topics t JOIN users u ON t.author_id = u.id';
+    let sql = 'SELECT t.*, u.username, u.avatar, u.role, u.wallet_address FROM topics t JOIN users u ON t.author_id = u.id';
     const params = [];
     
     if (section !== 'all') {
@@ -76,7 +136,7 @@ app.get('/api/topics', async (req, res) => {
 app.get('/api/topics/:id', async (req, res) => {
   try {
     const result = await query(
-      'SELECT t.*, u.username, u.avatar, u.role FROM topics t JOIN users u ON t.author_id = u.id WHERE t.id = $1',
+      'SELECT t.*, u.username, u.avatar, u.role, u.wallet_address FROM topics t JOIN users u ON t.author_id = u.id WHERE t.id = $1',
       [req.params.id]
     );
     
@@ -93,14 +153,41 @@ app.get('/api/topics/:id', async (req, res) => {
 
 app.post('/api/topics', async (req, res) => {
   try {
-    const { section, authorId = 1, title, content, tags = [] } = req.body;
+    const { section, title, content, tags = [] } = req.body;
     
+    // Require wallet authentication
+    if (!req.walletAddress) {
+      return res.status(401).json({ error: 'Wallet connection required to create topics' });
+    }
+
+    // Get or create user by wallet address
+    let userResult = await query(
+      'SELECT id FROM users WHERE wallet_address = $1',
+      [req.walletAddress.toLowerCase()]
+    );
+
+    let authorId;
+    if (userResult.rows.length > 0) {
+      authorId = userResult.rows[0].id;
+    } else {
+      // Auto-register user
+      const username = `User_${req.walletAddress.substring(0, 6)}`;
+      const avatar = req.walletAddress.substring(2, 8).toUpperCase();
+      
+      const newUser = await query(
+        `INSERT INTO users (username, avatar, wallet_address, role, bio) 
+         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        [username, avatar, req.walletAddress.toLowerCase(), 'user', '加密货币爱好者']
+      );
+      authorId = newUser.rows[0].id;
+    }
+
     const result = await query(
       `INSERT INTO topics (section, author_id, title, content, preview, tags) 
        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [section, authorId, title, content, content.substring(0, 100) + '...', tags]
+      [section || 'general', authorId, title, content, content.substring(0, 100) + '...', tags]
     );
-    
+
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Create topic error:', error);
@@ -112,7 +199,7 @@ app.post('/api/topics', async (req, res) => {
 app.get('/api/users/:id', async (req, res) => {
   try {
     const result = await query(
-      'SELECT id, username, avatar, role, bio, followers_count, total收益率, created_at FROM users WHERE id = $1',
+      'SELECT id, username, avatar, role, bio, wallet_address, followers_count, total_profit, created_at FROM users WHERE id = $1',
       [req.params.id]
     );
     
@@ -128,10 +215,29 @@ app.get('/api/users/:id', async (req, res) => {
   }
 });
 
+app.get('/api/users/wallet/:address', async (req, res) => {
+  try {
+    const result = await query(
+      'SELECT id, username, avatar, role, bio, wallet_address, followers_count, total_profit, created_at FROM users WHERE wallet_address = $1',
+      [req.params.address.toLowerCase()]
+    );
+    
+    if (result.rows.length > 0) {
+      const topicsResult = await query('SELECT COUNT(*) FROM topics WHERE author_id = $1', [result.rows[0].id]);
+      res.json({ ...result.rows[0], topicsCount: parseInt(topicsResult.rows[0].count) });
+    } else {
+      res.status(404).json({ error: 'User not found' });
+    }
+  } catch (error) {
+    console.error('User error:', error);
+    res.status(500).json({ error: 'Failed to fetch user' });
+  }
+});
+
 app.get('/api/top-traders', async (req, res) => {
   try {
     const result = await query(
-      'SELECT id, username, avatar, role, followers_count, total收益率 FROM users ORDER BY followers_count DESC LIMIT 5'
+      'SELECT id, username, avatar, role, wallet_address, followers_count, total_profit FROM users ORDER BY followers_count DESC LIMIT 5'
     );
     res.json(result.rows);
   } catch (error) {
@@ -140,7 +246,50 @@ app.get('/api/top-traders', async (req, res) => {
   }
 });
 
-// Trending topics
+// Comments
+app.get('/api/topics/:id/comments', async (req, res) => {
+  try {
+    const result = await query(
+      `SELECT c.*, u.username, u.avatar FROM comments c 
+       JOIN users u ON c.author_id = u.id 
+       WHERE c.topic_id = $1 ORDER BY c.created_at ASC`,
+      [req.params.id]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Comments error:', error);
+    res.status(500).json({ error: 'Failed to fetch comments' });
+  }
+});
+
+app.post('/api/topics/:id/comments', async (req, res) => {
+  try {
+    const { content } = req.body;
+    
+    if (!req.walletAddress) {
+      return res.status(401).json({ error: 'Wallet connection required' });
+    }
+
+    // Get user by wallet
+    let userResult = await query('SELECT id FROM users WHERE wallet_address = $1', [req.walletAddress.toLowerCase()]);
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found. Please create an account first.' });
+    }
+
+    const result = await query(
+      `INSERT INTO comments (topic_id, author_id, content) VALUES ($1, $2, $3) RETURNING *`,
+      [req.params.id, userResult.rows[0].id, content]
+    );
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Create comment error:', error);
+    res.status(500).json({ error: 'Failed to create comment' });
+  }
+});
+
+// Trending
 app.get('/api/trending', async (req, res) => {
   try {
     const result = await query(
@@ -159,23 +308,41 @@ app.get('/api/trending', async (req, res) => {
   }
 });
 
-// Comments endpoint
-app.get('/api/topics/:id/comments', async (req, res) => {
+// Follow
+app.post('/api/follow', async (req, res) => {
   try {
-    const result = await query(
-      `SELECT c.*, u.username, u.avatar FROM comments c 
-       JOIN users u ON c.author_id = u.id 
-       WHERE c.topic_id = $1 ORDER BY c.created_at ASC`,
-      [req.params.id]
+    const { traderId } = req.body;
+    
+    if (!req.walletAddress) {
+      return res.status(401).json({ error: 'Wallet connection required' });
+    }
+
+    const userResult = await query('SELECT id FROM users WHERE wallet_address = $1', [req.walletAddress.toLowerCase()]);
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const followerId = userResult.rows[0].id;
+
+    await query(
+      `INSERT INTO follows (follower_id, trader_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      [followerId, traderId]
     );
-    res.json(result.rows);
+
+    await query(
+      'UPDATE users SET followers_count = followers_count + 1 WHERE id = $1',
+      [traderId]
+    );
+
+    res.json({ success: true });
   } catch (error) {
-    console.error('Comments error:', error);
-    res.status(500).json({ error: 'Failed to fetch comments' });
+    console.error('Follow error:', error);
+    res.status(500).json({ error: 'Failed to follow' });
   }
 });
 
-// Serve static files in production
+// Serve static files
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../public')));
   app.get('*', (req, res) => {
@@ -184,8 +351,9 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 app.listen(PORT, () => {
-  console.log(`🚀 CryptoHub API Server running on port ${PORT}`);
-  console.log(`📊 Database: ${process.env.POSTGRES_URL ? 'Connected' : 'Using default'}`);
+  console.log(`🚀 CryptoHub API Server v3.0 running on port ${PORT}`);
+  console.log(`📊 Database: Connected`);
+  console(`🔗 Wallet Auth: Enabled`);
 });
 
 export default app;
