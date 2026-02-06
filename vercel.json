@@ -2,7 +2,6 @@
   "buildCommand": "bun install",
   "outputDirectory": "public",
   "installCommand": "bun install",
-  "runtime": "bun",
   "rewrites": [
     {
       "source": "/api/(.*)",
