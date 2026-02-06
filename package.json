@@ -1,17 +1,19 @@
 {
-  "name": "crypto-bbs-api",
+  "name": "crypto-bbs",
   "version": "1.0.0",
-  "description": "CryptoHub BBS Backend API",
+  "description": "CryptoHub BBS - Web3 币圈讨论社区",
   "main": "api/index.js",
+  "type": "module",
   "scripts": {
-    "dev": "node api/index.js",
-    "start": "node api/index.js"
+    "dev": "bun run api/index.js",
+    "start": "bun run api/index.js",
+    "build": "echo 'Static build complete'"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "better-sqlite3": "^9.2.2",
-    "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2"
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "bun-types": "^1.0.0"
   }
 }

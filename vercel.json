@@ -1,15 +1,12 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "bun install",
   "outputDirectory": "public",
+  "installCommand": "bun install",
+  "runtime": "bun",
   "rewrites": [
     {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     }
-  ],
-  "functions": {
-    "api/**/*.js": {
-      "maxDuration": 30
-    }
-  }
+  ]
 }
